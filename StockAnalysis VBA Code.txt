@@ -1,0 +1,116 @@
+Sub StockAnalysis()
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("A") 'Assigning our sheet
+    
+    'Declaring our variables
+    Dim ticker As String
+    Dim yearlyChange As Double
+    Dim percentChange As Double
+    Dim totalVolume As Double
+    Dim startRow As Long
+    Dim endRow As Long
+    Dim outputRow As Long
+    
+    
+    'The row the data will output to
+    outputRow = 2
+    
+    
+    'Declaring more variables to track the greatest percent increase, decrease, and the highest total volume
+    
+    Dim greatestincrease As Double: greatestincrease = -1E+307
+    Dim greatestdecrease As Double: greatestdecrease = 1E+307
+    Dim greatestvolume As Double: greatestvolume = -1E+307
+    Dim tickergreatestincrease As String
+    Dim tickergreatestdecrease As String
+    Dim tickergreatestvolume As String
+    
+    
+    'The row where our data starts
+    startRow = 2
+    
+    
+    'Calculating the percent and yearly change for each ticker symbol
+    
+    For i = 2 To ws.Cells(Rows.Count, 1).End(xlUp).Row
+        
+        If i = ws.Cells(Rows.Count, 1).End(xlUp).Row Or ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
+            
+            ticker = ws.Cells(i, 1).Value
+            endRow = i
+            
+            yearlyChange = ws.Cells(endRow, 6) - ws.Cells(startRow, 3)
+            If ws.Cells(startRow, 3) <> 0 Then
+                percentChange = yearlyChange / ws.Cells(startRow, 3)
+            Else
+                percentChange = 0
+            End If
+            
+            totalVolume = Application.WorksheetFunction.Sum(ws.Range("G" & startRow & ":G" & endRow))
+            
+            'Columns/Rows where our data will get outputed to
+            
+            ws.Cells(outputRow, 9) = ticker
+            ws.Cells(outputRow, 10) = yearlyChange
+            ws.Cells(outputRow, 11) = percentChange
+            ws.Cells(outputRow, 12) = totalVolume
+            
+            'Applying conditional formatting to point out the negative and positive percent changes
+            
+            With ws.Cells(outputRow, 10).FormatConditions
+                .Delete
+                
+                With .Add(Type:=xlCellValue, Operator:=xlLess, Formula1:="=0")
+                    .Interior.Color = RGB(255, 0, 0)
+                End With
+                
+                With .Add(Type:=xlCellValue, Operator:=xlGreaterEqual, Formula1:="=0")
+                    .Interior.Color = RGB(0, 255, 0)
+                End With
+                
+            End With
+            
+            'Determining whether or not the ticker symbol is greater than the greatest percent increase
+            If percentChange > greatestincrease Then
+                greatestincrease = percentChange
+                tickergreatestincrease = ticker
+            End If
+            
+            'Determining whether or not our ticker symbol is less than the lowest percent decrease
+            If percentChange < greatestdecrease Then
+                greatestdecrease = percentChange
+                tickergreatestdecrease = ticker
+            End If
+            
+            'Determining whether or not the total volume is greater than our greatest total volume
+            If totalVolume > greatestvolume Then
+                greatestvolume = totalVolume
+                tickergreatestvolume = ticker
+            End If
+                
+            outputRow = outputRow + 1
+            
+        
+            startRow = i + 1
+            
+        End If
+        
+    Next i
+
+    'The columns/rows where our tracked tickers will display
+            ws.Cells(2, "O") = "Greatest % Increase"
+            ws.Cells(2, "P") = tickergreatestincrease
+            ws.Cells(2, "Q") = Format(greatestincrease * 100, "0.00") & "%"
+    
+            ws.Cells(3, "O") = "Greatest % Decrease"
+            ws.Cells(3, "P") = tickergreatestdecrease
+            ws.Cells(3, "Q") = Format(greatestdecrease * 100, "0.00") & "%"
+    
+            ws.Cells(4, "O") = "Greatest Total Volume"
+            ws.Cells(4, "P") = tickergreatestvolume
+            ws.Cells(4, "Q") = Format(greatestvolume, "0.00")
+    
+            ws.Cells(1, "P") = "Ticker"
+            ws.Cells(1, "Q") = "Value"
+End Sub
